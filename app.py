@@ -74,7 +74,7 @@ def ask_question():
     try:
         url = "http://localhost:11434/api/generate"
         data = {
-            "model": "YOUR_OLLAMA_MODEL",
+            "model": "pdftota",
             "prompt": prompt
         }
         response = requests.post(url, json=data)

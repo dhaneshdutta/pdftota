@@ -1,7 +1,7 @@
-Flask==2.3.2
-Werkzeug==2.3.6
-SpeechRecognition==3.8.1
-PyPDF2==1.26.0
-requests==2.26.0
-gTTS==2.2.3
+Flask
+gtts
+pygame
+PyPDF2
 pdfplumber
+SpeechRecognition
+requests

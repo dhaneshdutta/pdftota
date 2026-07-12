@@ -1,55 +1,52 @@
+# pdftota
 
-# PDFtota 📄🤖
+a rag-based conversational assistant for pdf documents. upload pdfs, ask questions about their content, or just chat — the model dynamically decides when to reference documents and when to respond freely. supports voice input and text-to-speech output.
 
-**PDFtota** is a PDF-based voice assistant that allows users to upload a PDF, ask questions about its content, and receive responses from any local LLM. It also supports voice recording for input and text-to-speech (TTS) to speak out the AI's responses.
+## what it does
 
-## Features ✨
+- multi-document rag: upload multiple pdfs, select which ones to include in context, and query across them with source citations
+- conversational: doesn't just answer document questions — handles greetings, follow-ups, and general chat naturally
+- voice integration: speech-to-text input via microphone recording and text-to-speech playback on responses
+- inline pdf viewer: side-by-side pdf rendering with page-level citation linking using pdf.js
 
-- **📂 PDF Uploading:** Upload a PDF file and extract its content for analysis.
-- **🎤 Voice Input:** Record your question via microphone and transcribe it into text.
-- **💬 Text Input:** Ask questions directly through a chat-like interface.
-- **⚡ AI-Powered Responses:** Get answers based on the PDF's content using a local LLM model.
-- **🔊 Text-to-Speech (TTS):** Listen to the AI's responses via a button beside each answer.
+## architecture
 
-## Technologies Used 💻
+```
+flask (app.py)
+├── database.py    sqlite persistence — documents, chunks, embeddings, chat sessions, settings
+├── rag.py         text extraction, chunking, embedding generation, similarity search, llm inference
+└── templates/
+    └── index.html single-page frontend with three-panel layout
+```
 
-- **Frontend:**
-  - HTML, CSS, JavaScript
-  - Bootstrap icons
-- **Backend:**
-  - Python (Flask)
-  - SpeechRecognition for voice input
-  - PyMuPDF (fitz) for PDF text extraction
-  - gTTS for text-to-speech
+- embeddings are stored as binary blobs in sqlite — no external vector database required
+- retrieval uses cosine similarity on numpy vectors, with a pure python tf-idf fallback when embeddings are unavailable
+- audio transcription converts browser webm recordings to wav via ffmpeg before passing to google speech recognition
+- tts uses native browser speechsynthesis when available, falls back to server-side gtts
 
-## Installation 🛠️
+## setup
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/your-username/PDFtota.git
-   cd PDFtota
-   ```
+requires python 3.10+ and ffmpeg installed on the system.
 
-2. **Install Dependencies:**
-   Ensure you have Python 3.x installed. Then, install the required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/dhaneshdutta/pdftota.git
+cd pdftota
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-3. **Run the Flask Server:**
-   ```bash
-   python app.py
-   ```
+## usage
 
-4. **Access the Application:**
-   Open your web browser and go to `http://127.0.0.1:5000/`.
+```bash
+python app.py
+```
 
-## Usage 🚀
+open `http://127.0.0.1:5000` in your browser.
 
-- **📥 Upload a PDF:** Use the PDF icon next to the chat box to upload a PDF.
-- **💬 Ask a Question:** Type your question or record your voice, then press the **send** button to get a response.
-- **🔊 Speak the Response:** After a response is received, you will see a button next to the response bubble that allows you to hear the answer using TTS.
+upload a pdf, check its box in the sidebar to include it in context, and start chatting.
 
----
+## stack
 
-Feel free to contribute, suggest improvements, or report issues! 😊
+- backend: flask, pdfplumber, pypdf, speechrecognition, gtts, numpy
+- frontend: vanilla html/css/js, pdf.js, marked.js, highlight.js

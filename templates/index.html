@@ -3,202 +3,2068 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDFtota Voice Assistant</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <title>PDFtota - AI Multi-Document RAG Assistant</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- HighlightJS Code Styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
     <style>
+        :root {
+            --bg-base: #09090b; /* Zinc 950 */
+            --bg-surface: rgba(18, 18, 22, 0.45); /* Glass base */
+            --bg-panel: rgba(24, 24, 27, 0.7); /* Zinc 900 Glass */
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f4f4f5; /* Zinc 100 */
+            --text-secondary: #a1a1aa; /* Zinc 400 */
+            --color-primary: #27272a; /* Zinc 800 */
+            --color-primary-hover: #3f3f46; /* Zinc 700 */
+            --color-accent: #ffffff;
+            --color-success: #ffffff;
+            --color-danger: #ef4444;
+            --transition-smooth: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            --sidebar-width: 280px;
+        }
+
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-            font-family: Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
             display: flex;
-            flex-direction: column;
             height: 100vh;
             width: 100vw;
+            overflow: hidden;
+            letter-spacing: -0.01em;
         }
 
-        .container {
+        /* App Container Layout */
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 1. Left Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: rgba(9, 9, 11, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            flex: 1;
-            padding: 20px;
-            background-color: #2a2a2a;
-            border-radius: 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            flex-shrink: 0;
             height: 100%;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.02em;
+            text-transform: lowercase;
+        }
+
+        .sidebar-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+            gap: 24px;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-list, .doc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            color: var(--text-secondary);
+        }
+
+        .chat-item:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        .chat-item.active {
+            background-color: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .chat-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-title-wrapper i {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .chat-item.active .chat-title-wrapper i {
+            color: var(--text-primary);
+        }
+
+        .chat-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .chat-actions {
+            display: none;
+            gap: 5px;
+        }
+
+        .chat-item:hover .chat-actions {
+            display: flex;
+        }
+
+        .btn-icon-sm {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon-sm:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            transition: var(--transition-smooth);
+        }
+
+        .doc-item:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .doc-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            margin-right: 10px;
+        }
+
+        .doc-checkbox {
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background-color: transparent;
+            transition: var(--transition-smooth);
+            flex-shrink: 0;
+        }
+
+        .doc-checkbox:checked {
+            background-color: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .doc-checkbox:checked::after {
+            content: "\f00c";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 8px;
+            color: #09090b;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .doc-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doc-pages {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 1px;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: transparent;
+        }
+
+        .settings-btn {
             width: 100%;
+            padding: 9px;
+            border-radius: 6px;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition-smooth);
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #e0e0e0;
+        .settings-btn:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
-        .chat-area {
+        /* 2. Middle Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-base);
+            height: 100%;
+            position: relative;
+        }
+
+        .chat-header {
+            height: 64px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(9, 9, 11, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .chat-title-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-session-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .chat-session-status {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 1px;
+        }
+
+        .chat-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-header {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-header:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Chat Scroll Panel */
+        .chat-messages-panel {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
-            border-radius: 5px;
-            background-color: #333;
-            margin-bottom: 10px;
+            padding: 24px 24px 110px 24px; /* extra bottom padding for floating input */
             display: flex;
             flex-direction: column;
+            gap: 20px;
         }
 
-        .message {
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 5px;
+        .msg-row {
+            display: flex;
+            width: 100%;
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .msg-row.user-row {
+            justify-content: flex-end;
+        }
+
+        .msg-row.ai-row {
+            justify-content: flex-start;
+        }
+
+        .msg-bubble {
             max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.9rem;
             position: relative;
             word-wrap: break-word;
         }
 
-        .user {
-            background-color: #007bff;
-            color: white;
-            align-self: flex-end;
+        .user-row .msg-bubble {
+            background-color: #27272a; /* Zinc 800 Monochromatic */
+            color: #ffffff;
+            border-bottom-right-radius: 2px;
         }
 
-        .ai {
-            background-color: #444;
-            color: #e0e0e0;
-            align-self: flex-start;
+        .ai-row .msg-bubble {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #f4f4f5;
+            border-bottom-left-radius: 2px;
         }
 
-        #notification {
-            display: none;
+        /* Markdown Rendering inside Chat Bubble */
+        .msg-bubble p {
+            margin-bottom: 10px;
+        }
+        .msg-bubble p:last-child {
+            margin-bottom: 0;
+        }
+        .msg-bubble ul, .msg-bubble ol {
+            margin-left: 18px;
+            margin-bottom: 10px;
+        }
+        .msg-bubble pre {
+            background-color: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .msg-bubble code {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .msg-bubble pre code {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            font-size: 0.85em;
+        }
+        .msg-bubble table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 12px 0;
+        }
+        .msg-bubble th, .msg-bubble td {
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            text-align: left;
+        }
+        .msg-bubble th {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Citation System UI */
+        .citations-container {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .citation-tag {
+            background-color: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #d4d4d8;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition-smooth);
+        }
+
+        .citation-tag:hover {
+            background-color: #ffffff;
+            color: #09090b;
+            border-color: #ffffff;
+        }
+
+        .ai-actions {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-speak {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-speak:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-speak.playing {
+            background-color: #ffffff;
+            color: #09090b;
+            border-color: #ffffff;
+        }
+
+        /* Floating Chat Input Section */
+        .chat-input-panel {
             position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 24px;
+            background: linear-gradient(to top, #09090b 40%, rgba(9, 9, 11, 0));
+            border-top: none;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .input-wrapper {
+            background-color: rgba(20, 20, 25, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 12px;
+            width: 100%;
+            max-width: 720px;
+            transition: var(--transition-smooth);
+            pointer-events: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        .input-textarea {
+            width: 100%;
+            min-height: 40px;
+            max-height: 120px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: none;
+            padding: 4px;
+            line-height: 1.4;
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .input-action-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-action-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-input-utility {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-input-utility:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-record {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        .btn-record:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+        }
+
+        .btn-record.recording {
+            background-color: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            animation: pulseRecord 1.5s infinite;
+        }
+
+        .btn-send {
+            background-color: #ffffff;
+            color: #09090b;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-send:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* 3. Right PDF Viewer Panel (Collapsible) */
+        .pdf-panel {
+            width: 45%;
+            background-color: rgba(9, 9, 11, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .pdf-panel.collapsed {
+            width: 0;
+            opacity: 0;
+            overflow: hidden;
+            border-left: none;
+        }
+
+        .pdf-panel-header {
+            height: 64px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pdf-file-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        .pdf-viewer-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pdf-canvas-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            background-color: #09090b;
+        }
+
+        /* PDF Render Canvas wrapper */
+        .pdf-page-wrapper {
+            position: relative;
+            background-color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            transition: var(--transition-smooth);
+            border: 2px solid transparent;
+        }
+
+        .pdf-page-wrapper.highlight-flash {
+            animation: borderFlash 2s ease-out;
+        }
+
+        .pdf-page-number-label {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            z-index: 5;
+        }
+
+        .pdf-page-wrapper canvas {
+            display: block;
+            max-width: 100%;
+            height: auto !important;
+        }
+
+        /* 4. Settings Dialog Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background-color: rgba(18, 18, 22, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            width: 500px;
+            max-width: 90%;
+            display: flex;
+            flex-direction: column;
+            animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 65vh;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 9px 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .form-control:focus {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-modal-cancel {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-modal-cancel:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+        }
+
+        .btn-modal-save {
+            background-color: #ffffff;
+            border: none;
+            color: #09090b;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-modal-save:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Pulse wave animation for recording */
+        .recording-wave {
+            display: none;
+            align-items: center;
+            gap: 3px;
+            height: 16px;
+            margin-left: 8px;
+        }
+
+        .recording-wave.active {
+            display: flex;
+        }
+
+        .wave-bar {
+            width: 3px;
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 2.5px;
+            animation: dance 0.6s infinite ease-in-out;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        /* General Animations */
+        @keyframes dance {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+
+        @keyframes pulseRecord {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes modalSlide {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes borderFlash {
+            0% { border-color: #ffffff; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+            50% { border-color: #ffffff; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+            100% { border-color: transparent; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
             top: 20px;
             left: 50%;
-            transform: translateX(-50%);
-            background-color: #007bff;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 10;
-            animation: fade-in-out 3s forwards;
-        }
-
-        @keyframes fade-in-out {
-            0% { opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        textarea {
-            width: 100%;
-            height: 60px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            background-color: #333;
-            color: #e0e0e0;
-            resize: none;
-            font-size: 16px;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .button-container {
+            transform: translateX(-50%) translateY(-10px);
+            background-color: rgba(18, 18, 22, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 200;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-top: 10px;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-
-        .file-input-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
+            gap: 8px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
             opacity: 0;
-        }
-        
-        .speak-button {
-            margin-left: 10px;
-            background-color: #28a745;
-            border: none;
-            color: white;
-            padding: 5px 8px; /* Reduced width */
-            border-radius: 4px;
-            cursor: pointer;
-            display: inline-block; /* Show by default */
+            pointer-events: none;
+            transition: var(--transition-smooth);
         }
 
-        .speak-button:hover {
-            background-color: #218838;
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast i {
+            color: #ffffff;
+        }
+
+        /* Loading Dots Animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            animation: bounceDot 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounceDot {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>PDFtota</h1>
-        <div id="notification"></div>
-        <div class="chat-area" id="chatArea"></div>
-        <textarea id="questionArea" placeholder="Type your question or voice input here..."></textarea>
-        <div class="button-container">
-            <div class="file-input-wrapper">
-                <button>
-                    <i class="fas fa-file-pdf"></i> Upload PDF
-                </button>
-                <input type="file" id="pdfFile" accept=".pdf">
+    <div class="app-container">
+        <!-- 1. Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    pdftota.
+                </div>
             </div>
-            <button id="recordButton"><i class="fas fa-microphone"></i> Record</button>
-            <button onclick="sendQuestion()"><i class="fas fa-paper-plane"></i> Send</button>
+            
+            <div class="sidebar-section">
+                <!-- Chats list -->
+                <div>
+                    <div class="section-title">
+                        Chats
+                        <button class="btn-icon-sm" onclick="createNewChat()" title="Create New Chat">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="chat-list" id="chatList">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Documents list -->
+                <div>
+                    <div class="section-title">
+                        PDF Documents
+                        <button class="btn-icon-sm" onclick="triggerFileInput()" title="Upload PDF">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </button>
+                        <input type="file" id="fileInput" accept=".pdf" style="display: none;" onchange="handleFileUpload(event)">
+                    </div>
+                    <div class="doc-list" id="docList">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="settings-btn" onclick="openSettingsModal()">
+                    <i class="fa-solid fa-gears"></i> Assistant Settings
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Middle Chat Container -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-title-info">
+                    <div class="chat-session-name" id="sessionName">Select or Create a Chat</div>
+                    <div class="chat-session-status" id="sessionStatus">No active session</div>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="btn-header" onclick="togglePdfPanel()" id="pdfPanelToggleBtn">
+                        <i class="fa-solid fa-book-open"></i> Show PDF Viewer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat messages timeline -->
+            <div class="chat-messages-panel" id="chatTimeline">
+                <!-- Loaded dynamically -->
+            </div>
+
+            <!-- Chat input panel -->
+            <div class="chat-input-panel">
+                <div class="input-wrapper">
+                    <textarea class="input-textarea" id="chatInput" placeholder="Ask a question about your uploaded PDFs..." onkeydown="handleInputKeydown(event)"></textarea>
+                    <div class="input-actions">
+                        <div class="input-action-left">
+                            <button class="btn-input-utility btn-record" id="recordBtn" onclick="toggleSpeechInput()" title="Record Voice">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                            <div class="recording-wave" id="recordingWave">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                        </div>
+                        <div class="input-action-right">
+                            <button class="btn-send" onclick="submitMessage()">
+                                Send <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Right PDF Viewer Panel (Collapsible) -->
+        <div class="pdf-panel collapsed" id="pdfPanel">
+            <div class="pdf-panel-header">
+                <div class="pdf-file-title" id="pdfTitle">No PDF Loaded</div>
+                <div class="pdf-viewer-controls">
+                    <button class="btn-icon-sm" onclick="zoomPdf(-0.1)" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                    <button class="btn-icon-sm" onclick="zoomPdf(0.1)" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button class="btn-icon-sm" onclick="togglePdfPanel()" title="Close Viewer"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="pdf-canvas-container" id="pdfCanvasContainer">
+                <!-- Rendered PDF pages will go here -->
+            </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script>
-        let isRecording = false;
-        let mediaRecorder;
-        let audioChunks = [];
+    <!-- Settings Dialog -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">AI Assistant Settings</div>
+                <button class="btn-icon-sm" onclick="closeSettingsModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="settingsProvider">AI LLM Provider</label>
+                    <select class="form-control" id="settingsProvider" onchange="toggleProviderSettings()">
+                        <option value="ollama">Ollama (Fully Local)</option>
+                        <option value="gemini">Google Gemini API (Cloud)</option>
+                        <option value="openai">OpenAI API (Cloud)</option>
+                    </select>
+                </div>
 
-        document.getElementById('pdfFile').addEventListener('change', function(e) {
-            let fileName = e.target.files[0].name;
-            uploadPDF(e.target.files[0]);
-            showNotification(`Uploaded PDF: ${fileName}`);
+                <!-- Ollama settings -->
+                <div class="form-group provider-setting" id="settingOllamaGroup">
+                    <label for="settingsOllamaModel">Ollama Model</label>
+                    <select class="form-control" id="settingsOllamaModel">
+                        <!-- Loaded dynamically from Ollama API -->
+                    </select>
+                </div>
+
+                <!-- Gemini settings -->
+                <div class="provider-setting" id="settingGeminiGroup" style="display:none;">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="settingsGeminiKey">Gemini API Key</label>
+                        <input type="password" class="form-control" id="settingsGeminiKey" placeholder="Enter Gemini API Key">
+                    </div>
+                    <div class="form-group">
+                        <label for="settingsGeminiModel">Gemini Model</label>
+                        <select class="form-control" id="settingsGeminiModel">
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (Balanced & Recommended)</option>
+                            <option value="gemini-2.5-pro">gemini-2.5-pro (Smart & Accurate)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (Fast)</option>
+                            <option value="gemini-3.5-flash">gemini-3.5-flash (State-of-the-Art)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- OpenAI settings -->
+                <div class="provider-setting" id="settingOpenaiGroup" style="display:none;">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="settingsOpenaiKey">OpenAI API Key</label>
+                        <input type="password" class="form-control" id="settingsOpenaiKey" placeholder="Enter OpenAI API Key">
+                    </div>
+                    <div class="form-group">
+                        <label for="settingsOpenaiModel">OpenAI Model</label>
+                        <select class="form-control" id="settingsOpenaiModel">
+                            <option value="gpt-4o-mini">gpt-4o-mini (Cost-efficient)</option>
+                            <option value="gpt-4o">gpt-4o (Smartest)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsSystemPrompt">System Prompt (AI Persona)</label>
+                    <textarea class="form-control" id="settingsSystemPrompt" rows="3" placeholder="Define how the AI answers..."></textarea>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="settingsTemperature">Temperature (0.0 - 1.0)</label>
+                        <input type="number" class="form-control" id="settingsTemperature" min="0" max="1" step="0.1" value="0.3">
+                    </div>
+                    <div class="form-group">
+                        <label for="settingsChunkSize">RAG Chunk Size</label>
+                        <input type="number" class="form-control" id="settingsChunkSize" min="100" max="5000" step="50" value="800">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-cancel" onclick="closeSettingsModal()">Cancel</button>
+                <button class="btn-modal-save" onclick="saveSettings()">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Element -->
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-circle-info"></i>
+        <span id="toastMessage">Uploaded successfully!</span>
+    </div>
+
+    <!-- External Libraries via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    
+    <script>
+        // Set PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // App State
+        let currentSessionId = null;
+        let documentList = [];
+        let chatSessions = [];
+        let currentSettings = {};
+        let activePdfFilename = null;
+        let pdfDoc = null;
+        let pdfZoom = 1.0;
+        let renderedPages = new Set();
+        let isRecording = false;
+        let speechRecognizer = null;
+        let speechSynthesizer = window.speechSynthesis;
+        let currentUtterance = null;
+        let currentPlayingBtn = null;
+
+        // Initialize application on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadSettings();
+            await loadDocuments();
+            await loadChatSessions();
+            initSpeechRecognition();
         });
 
-        document.getElementById('recordButton').addEventListener('click', toggleRecording);
+        // Toast Helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
 
-        function toggleRecording() {
-            if (!isRecording) {
-                startRecording();
-            } else {
-                stopRecording();
+        // Settings API Handling
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                currentSettings = await response.json();
+                
+                // Fetch Ollama models list
+                const ollamaRes = await fetch('/api/ollama/models');
+                const modelsData = await ollamaRes.json();
+                const modelSelect = document.getElementById('settingsOllamaModel');
+                modelSelect.innerHTML = '';
+                
+                if (modelsData.models && modelsData.models.length > 0) {
+                    modelsData.models.forEach(model => {
+                        const opt = document.createElement('option');
+                        opt.value = model;
+                        opt.textContent = model;
+                        if (model === currentSettings.ollama_model) {
+                            opt.selected = true;
+                        }
+                        modelSelect.appendChild(opt);
+                    });
+                } else {
+                    const opt = document.createElement('option');
+                    opt.value = "pdftota";
+                    opt.textContent = "pdftota (Default)";
+                    modelSelect.appendChild(opt);
+                }
+            } catch (err) {
+                console.error("Error loading settings:", err);
             }
         }
 
-        function startRecording() {
+        function openSettingsModal() {
+            document.getElementById('settingsProvider').value = currentSettings.llm_provider;
+            document.getElementById('settingsGeminiKey').value = currentSettings.gemini_api_key || '';
+            document.getElementById('settingsGeminiModel').value = currentSettings.gemini_model || 'gemini-2.5-flash';
+            document.getElementById('settingsOpenaiKey').value = currentSettings.openai_api_key || '';
+            document.getElementById('settingsOpenaiModel').value = currentSettings.openai_model || 'gpt-4o-mini';
+            document.getElementById('settingsSystemPrompt').value = currentSettings.system_prompt;
+            document.getElementById('settingsTemperature').value = currentSettings.temperature;
+            document.getElementById('settingsChunkSize').value = currentSettings.chunk_size;
+            
+            toggleProviderSettings();
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function toggleProviderSettings() {
+            const provider = document.getElementById('settingsProvider').value;
+            document.querySelectorAll('.provider-setting').forEach(el => el.style.display = 'none');
+            
+            if (provider === 'ollama') {
+                document.getElementById('settingOllamaGroup').style.display = 'block';
+            } else if (provider === 'gemini') {
+                document.getElementById('settingGeminiGroup').style.display = 'block';
+            } else if (provider === 'openai') {
+                document.getElementById('settingOpenaiGroup').style.display = 'block';
+            }
+        }
+
+        async function saveSettings() {
+            const provider = document.getElementById('settingsProvider').value;
+            const updated = {
+                llm_provider: provider,
+                ollama_model: document.getElementById('settingsOllamaModel').value,
+                gemini_api_key: document.getElementById('settingsGeminiKey').value,
+                gemini_model: document.getElementById('settingsGeminiModel').value,
+                openai_api_key: document.getElementById('settingsOpenaiKey').value,
+                openai_model: document.getElementById('settingsOpenaiModel').value,
+                system_prompt: document.getElementById('settingsSystemPrompt').value,
+                temperature: document.getElementById('settingsTemperature').value,
+                chunk_size: document.getElementById('settingsChunkSize').value
+            };
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updated)
+                });
+                
+                if (response.ok) {
+                    currentSettings = updated;
+                    showToast("Settings saved successfully!");
+                    closeSettingsModal();
+                    updateStatusText();
+                } else {
+                    alert("Error saving settings.");
+                }
+            } catch (err) {
+                console.error("Save settings error:", err);
+            }
+        }
+
+        function updateStatusText() {
+            const statusEl = document.getElementById('sessionStatus');
+            const prov = currentSettings.llm_provider;
+            let detail = "";
+            if (prov === 'ollama') detail = `Local Ollama (${currentSettings.ollama_model})`;
+            else if (prov === 'gemini') detail = `Gemini API (${currentSettings.gemini_model})`;
+            else if (prov === 'openai') detail = `OpenAI API (${currentSettings.openai_model})`;
+            
+            statusEl.textContent = `Provider: ${detail}`;
+        }
+
+        // Documents API Handling
+        async function loadDocuments() {
+            try {
+                const response = await fetch('/api/documents');
+                documentList = await response.json();
+                renderDocuments();
+            } catch (err) {
+                console.error("Load documents error:", err);
+            }
+        }
+
+        function renderDocuments() {
+            const container = document.getElementById('docList');
+            container.innerHTML = '';
+            
+            if (documentList.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 15px; color: var(--text-secondary); font-size: 0.85rem;">No PDFs uploaded yet</div>`;
+                return;
+            }
+            
+            documentList.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = 'doc-item';
+                
+                // Load checkbox active state from localStorage or default to checked
+                const isChecked = localStorage.getItem(`doc_active_${doc.id}`) !== 'false';
+                
+                item.innerHTML = `
+                    <div class="doc-info" onclick="loadPdfViewer('${doc.filename}')">
+                        <input type="checkbox" class="doc-checkbox" id="check_doc_${doc.id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleDocActive(${doc.id})">
+                        <div style="min-width: 0; cursor: pointer; flex: 1;">
+                            <div class="doc-name" title="${doc.filename}">${doc.filename}</div>
+                            <div class="doc-pages">${doc.page_count} pages</div>
+                        </div>
+                    </div>
+                    <button class="btn-icon-sm" onclick="event.stopPropagation(); deleteDoc(${doc.id})" title="Delete File" style="color: var(--color-danger)">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function triggerFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            showToast("Uploading and indexing PDF... (Generates embeddings)");
+            
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showToast(`Successfully indexed ${file.name}`);
+                    await loadDocuments();
+                    loadPdfViewer(file.name);
+                } else {
+                    alert(`Error indexing: ${data.error}`);
+                }
+            } catch (err) {
+                console.error("Upload error:", err);
+                alert("Upload failed.");
+            }
+        }
+
+        async function deleteDoc(docId) {
+            if (!confirm("Are you sure you want to delete this document? All related AI chunks and search mappings will be lost.")) return;
+            
+            try {
+                const response = await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showToast("Document deleted");
+                    if (activePdfFilename) {
+                        const remaining = documentList.find(d => d.id === docId);
+                        if (remaining && remaining.filename === activePdfFilename) {
+                            closePdfPanel();
+                        }
+                    }
+                    await loadDocuments();
+                }
+            } catch (err) {
+                console.error("Delete doc error:", err);
+            }
+        }
+
+        function toggleDocActive(docId) {
+            const check = document.getElementById(`check_doc_${docId}`);
+            localStorage.setItem(`doc_active_${docId}`, check.checked);
+        }
+
+        function getActiveDocIds() {
+            const active = [];
+            documentList.forEach(doc => {
+                const check = document.getElementById(`check_doc_${doc.id}`);
+                if (check && check.checked) {
+                    active.push(doc.id);
+                }
+            });
+            return active;
+        }
+
+        // Chat Sessions API Handling
+        async function loadChatSessions() {
+            try {
+                const response = await fetch('/api/chats');
+                chatSessions = await response.json();
+                renderChatSessions();
+                
+                // Select first session if active, or create one
+                if (chatSessions.length > 0) {
+                    selectChatSession(chatSessions[0].id);
+                } else {
+                    createNewChat();
+                }
+            } catch (err) {
+                console.error("Load sessions error:", err);
+            }
+        }
+
+        function renderChatSessions() {
+            const container = document.getElementById('chatList');
+            container.innerHTML = '';
+            
+            chatSessions.forEach(session => {
+                const item = document.createElement('div');
+                item.className = `chat-item ${session.id === currentSessionId ? 'active' : ''}`;
+                item.onclick = () => selectChatSession(session.id);
+                
+                item.innerHTML = `
+                    <div class="chat-title-wrapper">
+                        <i class="fa-regular fa-comments"></i>
+                        <span class="chat-title" id="title_text_${session.id}">${session.title}</span>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="btn-icon-sm" onclick="event.stopPropagation(); renameChatSession('${session.id}')" title="Rename"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-icon-sm" onclick="event.stopPropagation(); deleteChatSession('${session.id}')" title="Delete" style="color: var(--color-danger)"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function createNewChat() {
+            try {
+                const title = "Chat Session " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const response = await fetch('/api/chats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    currentSessionId = data.id;
+                    await loadChatSessions();
+                    selectChatSession(currentSessionId);
+                }
+            } catch (err) {
+                console.error("Create chat error:", err);
+            }
+        }
+
+        async function selectChatSession(sessionId) {
+            currentSessionId = sessionId;
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+            
+            const activeItem = chatSessions.find(s => s.id === sessionId);
+            if (activeItem) {
+                document.getElementById('sessionName').textContent = activeItem.title;
+                updateStatusText();
+                
+                // Find and highlight in list
+                renderChatSessions();
+            }
+            
+            // Load messages
+            await loadMessages(sessionId);
+        }
+
+        async function renameChatSession(sessionId) {
+            const current = chatSessions.find(s => s.id === sessionId);
+            if (!current) return;
+            const newTitle = prompt("Enter new chat title:", current.title);
+            if (!newTitle || newTitle.trim() === '') return;
+            
+            try {
+                const response = await fetch(`/api/chats/${sessionId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: newTitle.trim() })
+                });
+                if (response.ok) {
+                    await loadChatSessions();
+                    if (sessionId === currentSessionId) {
+                        document.getElementById('sessionName').textContent = newTitle;
+                    }
+                }
+            } catch (err) {
+                console.error("Rename chat error:", err);
+            }
+        }
+
+        async function deleteChatSession(sessionId) {
+            if (!confirm("Are you sure you want to delete this chat session? Message history will be erased.")) return;
+            
+            try {
+                const response = await fetch(`/api/chats/${sessionId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showToast("Chat deleted");
+                    if (sessionId === currentSessionId) {
+                        currentSessionId = null;
+                    }
+                    await loadChatSessions();
+                }
+            } catch (err) {
+                console.error("Delete session error:", err);
+            }
+        }
+
+        // Messages timeline rendering
+        async function loadMessages(sessionId) {
+            try {
+                const response = await fetch(`/api/chats/${sessionId}`);
+                const data = await response.json();
+                
+                const timeline = document.getElementById('chatTimeline');
+                timeline.innerHTML = '';
+                
+                if (data.messages.length === 0) {
+                    timeline.innerHTML = `
+                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; color: var(--text-secondary); text-align:center; padding: 40px; animation: fadeIn 0.25s ease-out;">
+                            <i class="fa-solid fa-file-pdf" style="font-size: 2.5rem; margin-bottom: 15px; color: rgba(255, 255, 255, 0.45);"></i>
+                            <h2 style="font-weight: 700; font-size: 1.1rem; color: #ffffff; margin-bottom: 8px; letter-spacing: -0.02em;">Chat RAG Ready</h2>
+                            <p style="font-size: 0.85rem; max-width: 320px; line-height: 1.5; color: var(--text-secondary);">Upload a PDF, check its box to include it, and start querying or dictate a voice input.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                data.messages.forEach(msg => {
+                    appendMessageBubble(msg.sender, msg.text, msg.citations);
+                });
+                
+                scrollTimeline();
+            } catch (err) {
+                console.error("Load messages error:", err);
+            }
+        }
+
+        function appendMessageBubble(sender, text, citations) {
+            const timeline = document.getElementById('chatTimeline');
+            
+            // Remove empty state placeholder if present
+            const placeholder = timeline.querySelector('div[style*="display:flex"]');
+            if (placeholder) placeholder.remove();
+            
+            const row = document.createElement('div');
+            row.className = `msg-row ${sender === 'user' ? 'user-row' : 'ai-row'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+            
+            // Parse Markdown for AI responses
+            if (sender === 'ai') {
+                bubble.innerHTML = marked.parse(text);
+                
+                // Add code highlighting
+                bubble.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+                
+                // Append citations system
+                if (citations && citations.length > 0) {
+                    const citeContainer = document.createElement('div');
+                    citeContainer.className = 'citations-container';
+                    
+                    // Remove duplicates
+                    const uniqueCites = [];
+                    const seen = new Set();
+                    citations.forEach(c => {
+                        const key = `${c.filename}_${c.page_number}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            uniqueCites.push(c);
+                        }
+                    });
+                    
+                    uniqueCites.forEach((cite, index) => {
+                        const tag = document.createElement('div');
+                        tag.className = 'citation-tag';
+                        tag.innerHTML = `<i class="fa-solid fa-quote-left"></i> Page ${cite.page_number} (${cite.filename.substring(0, 12)}...)`;
+                        tag.onclick = () => {
+                            loadPdfViewer(cite.filename, cite.page_number);
+                        };
+                        citeContainer.appendChild(tag);
+                    });
+                    
+                    bubble.appendChild(citeContainer);
+                }
+                
+                // Append audio TTS buttons
+                const actionContainer = document.createElement('div');
+                actionContainer.className = 'ai-actions';
+                
+                const speakBtn = document.createElement('button');
+                speakBtn.className = 'btn-speak';
+                speakBtn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                speakBtn.onclick = () => toggleSpeechSynthesis(text, speakBtn);
+                
+                actionContainer.appendChild(speakBtn);
+                bubble.appendChild(actionContainer);
+            } else {
+                bubble.textContent = text;
+            }
+            
+            row.appendChild(bubble);
+            timeline.appendChild(row);
+            scrollTimeline();
+        }
+
+        function scrollTimeline() {
+            const timeline = document.getElementById('chatTimeline');
+            timeline.scrollTop = timeline.scrollHeight;
+        }
+
+        // Submitting user query
+        async function submitMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !currentSessionId) return;
+
+            // Clear input box
+            input.value = '';
+            
+            // Render user bubble immediately
+            appendMessageBubble('user', text);
+            
+            // Append AI typing indicator
+            const timeline = document.getElementById('chatTimeline');
+            const indicatorRow = document.createElement('div');
+            indicatorRow.className = 'msg-row ai-row';
+            indicatorRow.id = 'typingIndicator';
+            indicatorRow.innerHTML = `
+                <div class="msg-bubble">
+                    <div class="typing-indicator">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            `;
+            timeline.appendChild(indicatorRow);
+            scrollTimeline();
+
+            const activeDocs = getActiveDocIds();
+
+            try {
+                const response = await fetch(`/api/chats/${currentSessionId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        active_docs: activeDocs
+                    })
+                });
+                
+                // Remove typing indicator
+                document.getElementById('typingIndicator').remove();
+                
+                const data = await response.json();
+                if (response.ok) {
+                    appendMessageBubble('ai', data.text, data.citations);
+                } else {
+                    appendMessageBubble('ai', `Error answering query: ${data.error}`);
+                }
+            } catch (err) {
+                console.error("Submit message error:", err);
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) indicator.remove();
+                appendMessageBubble('ai', "Error connecting to the Flask server. Please check python logs.");
+            }
+        }
+
+        function handleInputKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                submitMessage();
+            }
+        }
+
+        // Interactive PDF.js Panel Controls
+        function togglePdfPanel() {
+            const panel = document.getElementById('pdfPanel');
+            const btn = document.getElementById('pdfPanelToggleBtn');
+            
+            if (panel.classList.contains('collapsed')) {
+                panel.classList.remove('collapsed');
+                btn.innerHTML = `<i class="fa-solid fa-book-open"></i> Hide PDF Viewer`;
+            } else {
+                panel.classList.add('collapsed');
+                btn.innerHTML = `<i class="fa-solid fa-book-open"></i> Show PDF Viewer`;
+            }
+        }
+
+        function closePdfPanel() {
+            const panel = document.getElementById('pdfPanel');
+            const btn = document.getElementById('pdfPanelToggleBtn');
+            panel.classList.add('collapsed');
+            btn.innerHTML = `<i class="fa-solid fa-book-open"></i> Show PDF Viewer`;
+        }
+
+        async function loadPdfViewer(filename, pageNumberToScroll = null) {
+            if (activePdfFilename === filename && pdfDoc) {
+                // Already loaded, just scroll to page if needed
+                if (pageNumberToScroll !== null) {
+                    scrollToPage(pageNumberToScroll);
+                }
+                return;
+            }
+            
+            activePdfFilename = filename;
+            document.getElementById('pdfTitle').textContent = filename;
+            
+            // Expand panel if collapsed
+            const panel = document.getElementById('pdfPanel');
+            if (panel.classList.contains('collapsed')) {
+                togglePdfPanel();
+            }
+            
+            const container = document.getElementById('pdfCanvasContainer');
+            container.innerHTML = `<div style="color:var(--text-secondary); text-align:center; padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #ffffff; margin-bottom: 10px;"></i><br>Rendering PDF...</div>`;
+            
+            renderedPages.clear();
+            
+            const url = `/uploads/${encodeURIComponent(filename)}`;
+            
+            try {
+                // Load the PDF document via PDF.js
+                const loadingTask = pdfjsLib.getDocument(url);
+                pdfDoc = await loadingTask.promise;
+                
+                container.innerHTML = ''; // Clear loading
+                
+                // Create page canvas nodes for all pages in document
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    const pageWrapper = document.createElement('div');
+                    pageWrapper.className = 'pdf-page-wrapper';
+                    pageWrapper.id = `pdf_page_${i}`;
+                    pageWrapper.setAttribute('data-page', i);
+                    
+                    const label = document.createElement('div');
+                    label.className = 'pdf-page-number-label';
+                    label.textContent = `Page ${i}`;
+                    pageWrapper.appendChild(label);
+                    
+                    const canvas = document.createElement('canvas');
+                    pageWrapper.appendChild(canvas);
+                    container.appendChild(pageWrapper);
+                    
+                    // Simple IntersectionObserver for lazy page rendering
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const pg = parseInt(entry.target.getAttribute('data-page'));
+                                renderPage(pg);
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    }, { root: container, threshold: 0.1 });
+                    
+                    observer.observe(pageWrapper);
+                }
+                
+                if (pageNumberToScroll !== null) {
+                    // Slight delay to allow DOM generation
+                    setTimeout(() => {
+                        scrollToPage(pageNumberToScroll);
+                    }, 200);
+                } else {
+                    renderPage(1); // Force render page 1 initially
+                }
+                
+            } catch (err) {
+                console.error("PDF.js load error:", err);
+                container.innerHTML = `<div style="color:var(--color-danger); text-align:center; padding:20px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom:10px;"></i><br>Could not load PDF: ${err.message}</div>`;
+            }
+        }
+
+        async function renderPage(pageNum) {
+            if (!pdfDoc || renderedPages.has(pageNum)) return;
+            renderedPages.add(pageNum);
+            
+            try {
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: pdfZoom * 1.5 });
+                
+                const wrapper = document.getElementById(`pdf_page_${pageNum}`);
+                if (!wrapper) return;
+                
+                const canvas = wrapper.querySelector('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                await page.render(renderContext).promise;
+            } catch (err) {
+                console.error(`Page ${pageNum} render error:`, err);
+            }
+        }
+
+        function scrollToPage(pageNum) {
+            const wrapper = document.getElementById(`pdf_page_${pageNum}`);
+            if (!wrapper) return;
+            
+            // Render it first if not done
+            renderPage(pageNum);
+            
+            // Smooth scroll
+            wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Trigger border flash animation
+            wrapper.classList.remove('highlight-flash');
+            void wrapper.offsetWidth; // Trigger reflow to restart animation
+            wrapper.classList.add('highlight-flash');
+        }
+
+        function zoomPdf(val) {
+            if (!pdfDoc) return;
+            pdfZoom = Math.max(0.5, Math.min(3.0, pdfZoom + val));
+            
+            // Re-render all loaded canvases
+            const activePageKeys = Array.from(renderedPages);
+            renderedPages.clear();
+            
+            activePageKeys.forEach(p => {
+                renderPage(p);
+            });
+        }
+
+        // Web Speech synthesis (TTS) - Zero server-load audio output
+        // Web Speech synthesis (TTS) - Zero server-load audio output with server fallback
+        let activeAudio = null;
+
+        async function fallbackSpeakEndpoint(text, btn) {
+            if (activeAudio) {
+                activeAudio.pause();
+                activeAudio = null;
+                btn.classList.remove('playing');
+                btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                currentPlayingBtn = null;
+                return;
+            }
+
+            btn.classList.add('playing');
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Generating...`;
+            currentPlayingBtn = btn;
+
+            try {
+                const response = await fetch('/speak', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Server-side TTS failed");
+                }
+
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+                activeAudio = new Audio(audioUrl);
+                
+                activeAudio.onplay = () => {
+                    btn.classList.add('playing');
+                    btn.innerHTML = `<i class="fa-solid fa-circle-stop"></i> Stop audio`;
+                };
+
+                activeAudio.onended = () => {
+                    btn.classList.remove('playing');
+                    btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                    activeAudio = null;
+                    currentPlayingBtn = null;
+                };
+
+                activeAudio.onerror = () => {
+                    showToast("Audio playback failed");
+                    btn.classList.remove('playing');
+                    btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                    activeAudio = null;
+                    currentPlayingBtn = null;
+                };
+
+                await activeAudio.play();
+            } catch (err) {
+                console.error("TTS fallback error:", err);
+                showToast("TTS generator failed");
+                btn.classList.remove('playing');
+                btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                currentPlayingBtn = null;
+            }
+        }
+
+        function toggleSpeechSynthesis(text, btn) {
+            // Stop any active server-side audio playback
+            if (activeAudio) {
+                activeAudio.pause();
+                activeAudio = null;
+                if (currentPlayingBtn) {
+                    currentPlayingBtn.classList.remove('playing');
+                    currentPlayingBtn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                }
+                currentPlayingBtn = null;
+                return;
+            }
+
+            // Stop any active native SpeechSynthesis
+            if (speechSynthesizer && speechSynthesizer.speaking && currentUtterance) {
+                speechSynthesizer.cancel();
+                if (currentPlayingBtn) {
+                    currentPlayingBtn.classList.remove('playing');
+                    currentPlayingBtn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                }
+                if (currentPlayingBtn === btn) {
+                    currentPlayingBtn = null;
+                    return;
+                }
+            }
+
+            const temp = document.createElement('div');
+            temp.innerHTML = marked.parse(text);
+            const plainText = temp.textContent || temp.innerText || "";
+
+            // Check if native speechSynthesis is functional and has voices
+            const nativeVoicesAvailable = speechSynthesizer && speechSynthesizer.getVoices().length > 0;
+
+            if (nativeVoicesAvailable) {
+                currentUtterance = new SpeechSynthesisUtterance(plainText);
+                currentPlayingBtn = btn;
+                
+                currentUtterance.onstart = () => {
+                    btn.classList.add('playing');
+                    btn.innerHTML = `<i class="fa-solid fa-circle-stop"></i> Stop audio`;
+                };
+                
+                currentUtterance.onend = () => {
+                    btn.classList.remove('playing');
+                    btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen response`;
+                    currentPlayingBtn = null;
+                };
+                
+                currentUtterance.onerror = (e) => {
+                    console.error("SpeechSynthesis error, falling back to server TTS:", e);
+                    fallbackSpeakEndpoint(plainText, btn);
+                };
+
+                speechSynthesizer.speak(currentUtterance);
+            } else {
+                // Fallback to server-side TTS immediately
+                fallbackSpeakEndpoint(plainText, btn);
+            }
+        }
+
+        // Web Speech Recognition (STT) - Realtime Dictation
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                console.warn("Browser does not support Web Speech Recognition. Falling back to backend file-based transcription.");
+                return;
+            }
+
+            speechRecognizer = new SpeechRecognition();
+            speechRecognizer.continuous = false;
+            speechRecognizer.interimResults = false;
+            speechRecognizer.lang = 'en-US';
+
+            speechRecognizer.onstart = () => {
+                isRecording = true;
+                const btn = document.getElementById('recordBtn');
+                btn.classList.add('recording');
+                document.getElementById('recordingWave').classList.add('active');
+            };
+
+            speechRecognizer.onresult = (event) => {
+                const resultText = event.results[0][0].transcript;
+                const input = document.getElementById('chatInput');
+                input.value += (input.value ? ' ' : '') + resultText;
+            };
+
+            speechRecognizer.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                showToast("Voice Recognition Error: " + event.error);
+                stopSpeechRecognition();
+            };
+
+            speechRecognizer.onend = () => {
+                stopSpeechRecognition();
+            };
+        }
+
+        function toggleSpeechInput() {
+            if (!speechRecognizer) {
+                // If browser Web Speech is not supported, fall back to backend recording logic
+                fallbackRecordingLogic();
+                return;
+            }
+
+            if (!isRecording) {
+                speechRecognizer.start();
+            } else {
+                speechRecognizer.stop();
+            }
+        }
+
+        function stopSpeechRecognition() {
+            isRecording = false;
+            const btn = document.getElementById('recordBtn');
+            btn.classList.remove('recording');
+            document.getElementById('recordingWave').classList.remove('active');
+        }
+
+        // Backend fallback recording if Web Speech is missing (using MediaRecorder)
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        function fallbackRecordingLogic() {
+            if (isRecording) {
+                // Stop recording
+                if (mediaRecorder) mediaRecorder.stop();
+                stopSpeechRecognition();
+                return;
+            }
+
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(stream => {
                     mediaRecorder = new MediaRecorder(stream);
@@ -210,141 +2076,40 @@
                     });
 
                     mediaRecorder.addEventListener("stop", () => {
-                        const audioBlob = new Blob(audioChunks);
-                        sendAudioToServer(audioBlob);
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        sendAudioToTranscribeEndpoint(audioBlob);
                     });
 
                     isRecording = true;
-                    document.getElementById('recordButton').innerHTML = '<i class="fas fa-stop"></i> Stop';
+                    document.getElementById('recordBtn').classList.add('recording');
+                    document.getElementById('recordingWave').classList.add('active');
+                })
+                .catch(err => {
+                    alert("Could not access microphone: " + err.message);
                 });
         }
 
-        function stopRecording() {
-            mediaRecorder.stop();
-            isRecording = false;
-            document.getElementById('recordButton').innerHTML = '<i class="fas fa-microphone"></i> Record';
-        }
-
-        function sendAudioToServer(audioBlob) {
+        async function sendAudioToTranscribeEndpoint(audioBlob) {
             const formData = new FormData();
             formData.append("audio", audioBlob);
 
-            fetch('/transcribe', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.text) {
-                    addMessage(data.text, 'user');
-                    sendQuestion(data.text); // Send transcribed text as question
+            showToast("Transcribing audio file...");
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok && data.text) {
+                    const input = document.getElementById('chatInput');
+                    input.value += (input.value ? ' ' : '') + data.text;
                 } else {
-                    alert('Error: ' + data.error);
+                    showToast("Transcription failed: " + data.error);
                 }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function uploadPDF(file) {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            fetch('/upload_pdf', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    showNotification(data.message);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function sendQuestion(question) {
-            const userQuestion = question || document.getElementById('questionArea').value;
-            if (!userQuestion) return;
-
-            addMessage(userQuestion, 'user');
-            document.getElementById('questionArea').value = '';
-
-            fetch('/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: userQuestion })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.answer) {
-                    addMessage(data.answer, 'ai');
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function addMessage(message, sender) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender);
-            messageElement.textContent = message;
-
-            // If the message is from AI, create a container for the message and the speak button
-            if (sender === 'ai') {
-                const responseContainer = document.createElement('div');
-                responseContainer.style.display = 'flex';
-                responseContainer.style.alignItems = 'center';
-
-                // Create the AI message bubble
-                responseContainer.appendChild(messageElement);
-
-                // Create the speak button
-                const speakButton = document.createElement('button');
-                speakButton.classList.add('speak-button');
-                speakButton.innerHTML = '<i class="fas fa-volume-up"></i>';
-                speakButton.onclick = () => speakAnswer(message);
-                responseContainer.appendChild(speakButton);
-
-                document.getElementById('chatArea').appendChild(responseContainer);
-            } else {
-                document.getElementById('chatArea').appendChild(messageElement);
+            } catch (err) {
+                console.error("Transcribe API error:", err);
             }
-
-            // Scroll to the bottom of the chat area
-            document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
-        }
-
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.display = 'block';
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-
-        function speakAnswer(answer) {
-            fetch('/speak', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: answer })
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.play();
-            })
-            .catch(error => console.error('Error:', error));
         }
     </script>
 </body>
 </html>
-

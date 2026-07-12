@@ -11,7 +11,7 @@ a rag-based conversational assistant for pdf documents. upload pdfs, ask questio
 
 ## architecture
 
-```
+```text
 flask (app.py)
 ├── database.py    sqlite persistence — documents, chunks, embeddings, chat sessions, settings
 ├── rag.py         text extraction, chunking, embedding generation, similarity search, llm inference

@@ -4,3 +4,4 @@ venv/
 *.db
 uploads/
 __pycache__/
+datasets/

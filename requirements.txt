@@ -1,7 +1,7 @@
-Flask
+flask
 gtts
-pygame
-PyPDF2
 pdfplumber
-SpeechRecognition
+pypdf
+speechrecognition
 requests
+numpy
